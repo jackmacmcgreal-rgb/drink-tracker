@@ -1,10 +1,12 @@
 let drinks = [];
 let total = 0;
 
-let lastUpdateTime;
 let scrollY = 0;
-let prevTouchY = 0;
+let startTouchY = 0;
+let isTouching = false;
+
 let contentHeight = 0;
+
 let deleteBtn;
 
 let categories = [
@@ -46,7 +48,9 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(CENTER, CENTER);
 
-  lastUpdateTime = millis();
+  // make canvas mobile-safe
+  let c = document.querySelector("canvas");
+  if (c) c.style.touchAction = "none";
 
   drinks = JSON.parse(localStorage.getItem("drinks") || "[]");
   total = parseFloat(localStorage.getItem("total") || "0");
@@ -65,18 +69,25 @@ function draw() {
   drawBottomPanel();
 }
 
+// ================= TOP BAR =================
+
 function drawTopBar() {
   fill(20);
   rect(0, 0, width, 100);
 
   fill(255);
-  textSize(40);
-  text("Drinks", width / 2, 30);
+  textSize(32);
+  text("Drinks", width / 2, 25);
 
-  textSize(60);
-  text(nf(total, 1, 1), width / 2, 75);
+  textSize(50);
+  text(nf(total, 1, 1), width / 2, 70);
 
-  deleteBtn = { x: width - 130, y: 30, w: 120, h: 40 };
+  deleteBtn = {
+    x: width - 130,
+    y: 30,
+    w: 120,
+    h: 40
+  };
 
   fill(200, 60, 60);
   rect(deleteBtn.x, deleteBtn.y, deleteBtn.w, deleteBtn.h, 10);
@@ -86,12 +97,14 @@ function drawTopBar() {
   text("Undo", deleteBtn.x + 60, deleteBtn.y + 20);
 }
 
+// ================= LIST =================
+
 function drawCategories() {
   let y = 120;
 
   for (let cat of categories) {
     fill(120, 200, 255);
-    textSize(24);
+    textSize(22);
     text(cat.name, width / 2, y);
     y += 30;
 
@@ -100,7 +113,7 @@ function drawCategories() {
       rect(20, y, width - 40, 60, 12);
 
       fill(255);
-      textSize(18);
+      textSize(16);
       text(item.name + " (" + item.value + ")", width / 2, y + 30);
 
       item.x = 20;
@@ -117,18 +130,20 @@ function drawCategories() {
   return y;
 }
 
+// ================= BOTTOM =================
+
 function drawBottomPanel() {
-  let h = 180;
+  let h = 160;
 
   fill(20);
   rect(0, height - h, width, h);
 
   fill(255);
-  textSize(20);
-  text("Recent", width / 2, height - h + 30);
+  textSize(18);
+  text("Recent", width / 2, height - h + 25);
 
   let recent = drinks.slice(-3).reverse();
-  let y = height - h + 70;
+  let y = height - h + 60;
 
   for (let d of recent) {
     text(d.name + " +" + d.value, width / 2, y);
@@ -136,33 +151,86 @@ function drawBottomPanel() {
   }
 }
 
-
-function mousePressed() {
-  handleTap(mouseX, mouseY);
-  prevTouchY = mouseY;
-}
+// ================= INPUT (FIXED MOBILE) =================
 
 function touchStarted() {
   if (touches.length > 0) {
+    startTouchY = touches[0].y;
     handleTap(touches[0].x, touches[0].y);
-    prevTouchY = touches[0].y;
+    isTouching = true;
   }
   return false;
 }
 
 function touchMoved() {
-  if (touches.length > 0) {
-    let currentY = touches[0].y;
-    let delta = currentY - prevTouchY;
+  if (!isTouching || touches.length === 0) return false;
 
-    if (isFinite(delta)) {
-      scrollY += delta;
-    }
+  let currentY = touches[0].y;
+  let delta = currentY - startTouchY;
 
-    prevTouchY = currentY;
+  scrollY += delta;
 
-    let minScroll = min(0, height - contentHeight - 120);
-    scrollY = constrain(scrollY, minScroll, 0);
-  }
+  let minScroll = min(0, height - contentHeight - 120);
+  scrollY = constrain(scrollY, minScroll, 0);
+
+  startTouchY = currentY;
   return false;
+}
+
+function touchEnded() {
+  isTouching = false;
+  return false;
+}
+
+function mousePressed() {
+  handleTap(mouseX, mouseY);
+  return false;
+}
+
+// ================= LOGIC =================
+
+function handleTap(mx, my) {
+  if (
+    mx > deleteBtn.x &&
+    mx < deleteBtn.x + deleteBtn.w &&
+    my > deleteBtn.y &&
+    my < deleteBtn.y + deleteBtn.h
+  ) {
+    undoDrink();
+    return;
+  }
+
+  let adjustedY = my - scrollY;
+
+  for (let cat of categories) {
+    for (let item of cat.items) {
+      if (
+        mx > item.x &&
+        mx < item.x + item.w &&
+        adjustedY > item.y &&
+        adjustedY < item.y + item.h
+      ) {
+        addDrink(item.name, item.value);
+      }
+    }
+  }
+}
+
+function addDrink(name, value) {
+  drinks.push({ name, value });
+  total += value;
+
+  localStorage.setItem("drinks", JSON.stringify(drinks));
+  localStorage.setItem("total", total);
+}
+
+function undoDrink() {
+  if (drinks.length > 0) {
+    let last = drinks.pop();
+    total -= last.value;
+    total = max(0, total);
+
+    localStorage.setItem("drinks", JSON.stringify(drinks));
+    localStorage.setItem("total", total);
+  }
 }
