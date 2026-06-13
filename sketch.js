@@ -1,36 +1,40 @@
-
 let drinks = [];
 let total = 0;
 
 let screen = "home";
 let step = null;
-let selection = {};
 
-let buttons = {};
+let selection = {};
+let buttons = [];
+
+let lastDecayTime;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(CENTER, CENTER);
 
-  // 🚨 HARD iOS + DESKTOP TOUCH LOCK (prevents image drag/download)
   let c = document.querySelector("canvas");
   if (c) {
     c.style.position = "fixed";
     c.style.touchAction = "none";
     c.style.userSelect = "none";
-    c.style.webkitUserSelect = "none";
     c.style.webkitTouchCallout = "none";
-    c.style.webkitTapHighlightColor = "transparent";
   }
 
   drinks = JSON.parse(localStorage.getItem("drinks") || "[]");
   total = Number(localStorage.getItem("total") || 0);
+  
+  lastDecayTime = Number(localStorage.getItem("lastDecayTime")) || millis();
 }
 
 // ================= DRAW =================
 
 function draw() {
   background(15);
+
+  handleDecay(); // 👈 ADD THIS
+
+  buttons = [];
 
   drawTop();
 
@@ -40,7 +44,7 @@ function draw() {
   drawBottom();
 }
 
-// ================= TOP BAR =================
+// ================= TOP =================
 
 function drawTop() {
   fill(20);
@@ -53,153 +57,130 @@ function drawTop() {
   textSize(48);
   text(nf(total, 1, 1), width / 2, 75);
 
-  buttons.undo = { x: 10, y: 40, w: 80, h: 40 };
-  buttons.reset = { x: width - 90, y: 40, w: 80, h: 40 };
-
-  btn(buttons.undo, "Undo", 80);
-  btn(buttons.reset, "Reset", [200, 60, 60]);
-}
-
-function btn(b, label, col) {
-  fill(col);
-  rect(b.x, b.y, b.w, b.h, 10);
-  fill(255);
-  textSize(12);
-  text(label, b.x + b.w / 2, b.y + b.h / 2);
+  addBtn("undo", 10, 40, 80, 40, "Undo", 80, undo);
+  addBtn("reset", width - 90, 40, 80, 40, "Reset", [200, 60, 60], reset);
 }
 
 // ================= HOME =================
 
 function drawHome() {
-  makeBtn("BEER", width / 2, 220, () => {
-    screen = "beer_type";
+  addBtn("beer", width / 2 - 120, 220, 240, 80, "BEER", 40, () => {
+    screen = "beer";
+    step = "beer_type";
   });
 
-  makeBtn("WINE", width / 2, 350, () => {
-    screen = "wine_type";
+  addBtn("wine", width / 2 - 120, 340, 240, 80, "WINE", 40, () => {
+    screen = "wine";
+    step = "wine_type";
   });
 
-  makeBtn("SPIRIT", width / 2, 480, () => {
-    screen = "spirit_type";
+  addBtn("spirit", width / 2 - 120, 460, 240, 80, "SPIRIT", 40, () => {
+    screen = "spirit";
+    step = "spirit_type";
   });
 }
 
 // ================= FLOW =================
 
 function drawFlow() {
-  backButton();
+  addBtn("back", 10, 130, 80, 40, "Back", 80, () => {
+    screen = "home";
+    step = null;
+    selection = {};
+  });
 
-  if (screen === "beer_type") {
-    makeBtn("PINT", width / 2, 220, () => selectBeer("PINT"));
-    makeBtn("SCHOONER", width / 2, 330, () => selectBeer("SCHOONER"));
-    makeBtn("BOTTLE", width / 2, 440, () => selectBeer("BOTTLE"));
+  // ================= BEER =================
+
+  if (screen === "beer" && step === "beer_type") {
+    option("PINT", 220, () => {
+      selection.beer = "PINT";
+      step = "beer_strength";
+    });
+
+    option("SCHOONER", 320, () => {
+      selection.beer = "SCHOONER";
+      step = "beer_strength";
+    });
+
+    option("BOTTLE", 420, () => {
+      selection.beer = "BOTTLE";
+      step = "beer_strength";
+    });
   }
 
-  if (screen === "beer_strength") {
-    makeBtn("FULL STRENGTH", width / 2, 220, () => addBeer(1));
-    makeBtn("MID STRENGTH", width / 2, 330, () => addBeer(0.8));
-    makeBtn("LOW STRENGTH", width / 2, 440, () => addBeer(0.6));
+  if (screen === "beer" && step === "beer_strength") {
+    option("FULL STRENGTH", 220, () => addBeer(1));
+    option("MID STRENGTH", 320, () => addBeer(0.8));
+    option("LOW STRENGTH", 420, () => addBeer(0.6));
   }
 
-  if (screen === "wine_type") {
-    makeBtn("RED", width / 2, 220, () => selectWine("RED"));
-    makeBtn("WHITE", width / 2, 330, () => selectWine("WHITE"));
-    makeBtn("SPARKLING", width / 2, 440, () => addWineSparkling());
+  // ================= WINE =================
+
+  if (screen === "wine" && step === "wine_type") {
+    option("RED", 220, () => {
+      selection.wine = "RED";
+      step = "wine_size";
+    });
+
+    option("WHITE", 320, () => {
+      selection.wine = "WHITE";
+      step = "wine_size";
+    });
+
+    option("SPARKLING", 420, () => {
+      selection.sparkling = "SPARKLING";
+      step = "sparkling_size";
+    });
   }
 
-  if (screen === "wine_size") {
-    let v = selection.wine === "RED" ? [1.6, 1.0, 8] : [1.4, 1.0, 7];
+  if (screen === "wine" && step === "sparkling_size"){
+    option("GLASS", 220, () => add(selection.sparkling,1.5))
+    option("BOTTLE", 320, () => add(selection.sparkling,7.5))
+  }
+  
+  if (screen === "wine" && step === "wine_size") {
+    let base = selection.wine === "RED" ? 1.6 : 1.4;
 
-    makeBtn("LARGE", width / 2, 220, () => addWine(v[0]));
-    makeBtn("REGULAR", width / 2, 330, () => addWine(v[1]));
-    makeBtn("BOTTLE", width / 2, 440, () => addWine(v[2]));
+    option("LARGE", 220, () => add(selection.wine, base));
+    option("REGULAR", 320, () => add(selection.wine, 1.0));
+    option("BOTTLE", 420, () =>
+      add(selection.wine, selection.wine === "RED" ? 8 : 7.5)
+    );
   }
 
-  if (screen === "spirit_type") {
-    makeBtn("MIXER", width / 2, 220, () => selectSpirit("MIXER"));
-    makeBtn("COCKTAIL", width / 2, 330, () => addSpirit(2));
-    makeBtn("SHOT", width / 2, 440, () => selectSpirit("SHOT"));
+  // ================= SPIRIT =================
+
+  if (screen === "spirit" && step === "spirit_type") {
+    option("MIXER", 220, () => add("MIXER", 0.5));
+
+    option("COCKTAIL", 320, () => add("COCKTAIL", 2));
+
+    option("SHOT", 420, () => {
+      step = "spirit_shot";
+    });
   }
 
-  if (screen === "spirit_sub") {
-    makeBtn("LIQUEUR", width / 2, 220, () => addSpirit(0.5));
-    makeBtn("LIQUOR", width / 2, 330, () => addSpirit(1));
+  if (screen === "spirit" && step === "spirit_shot") {
+    option("LIQUEUR", 220, () => add("SHOT LIQUEUR", 0.5));
+    option("LIQUOR", 320, () => add("SHOT LIQUOR", 1));
   }
 }
 
-// ================= BUTTON SYSTEM =================
+// ================= BUTTON =================
 
-function makeBtn(label, x, y, action) {
-  let b = { x: x - 120, y: y - 40, w: 240, h: 80, action };
+function option(label, y, action) {
+  addBtn(label, width / 2 - 120, y, 240, 80, label, 30, action);
+}
 
-  fill(40);
-  rect(b.x, b.y, b.w, b.h, 14);
+function addBtn(id, x, y, w, h, label, col, action) {
+  fill(col);
+  rect(x, y, w, h, 14);
 
   fill(255);
-  textSize(20);
-  text(label, x, y);
+  textSize(18);
+  text(label, x + w / 2, y + h / 2);
 
-  buttons[label] = b;
-}
-
-// ================= BACK =================
-
-function backButton() {
-  let b = { x: 10, y: 130, w: 80, h: 40 };
-  buttons.back = b;
-
-  fill(80);
-  rect(b.x, b.y, b.w, b.h, 10);
-
-  fill(255);
-  textSize(12);
-  text("Back", 50, 150);
-}
-
-// ================= LOGIC =================
-
-function selectBeer(type) {
-  selection.beer = type;
-  screen = "beer_strength";
-}
-
-function addBeer(mult) {
-  let base =
-    selection.beer === "PINT" ? 1.6 :
-    selection.beer === "SCHOONER" ? 1.1 :
-    1.4;
-
-  add(`${selection.beer}`, base * mult);
-}
-
-function selectWine(type) {
-  selection.wine = type;
-  screen = type === "SPARKLING" ? "home" : "wine_size";
-}
-
-function addWine(v) {
-  add(`${selection.wine}`, v);
-}
-
-function addWineSparkling() {
-  add("SPARKLING", 1.5);
-}
-
-function selectSpirit(type) {
-  selection.spirit = type;
-  screen = type === "COCKTAIL" ? "home" : "spirit_sub";
-}
-
-function addSpirit(v) {
-  add(selection.spirit, v);
-}
-
-// ================= CORE =================
-
-function add(name, value) {
-  drinks.push({ name, value });
-  total += value;
-  save();
+  buttons.push({ x, y, w, h, action });
 }
 
 // ================= INPUT =================
@@ -215,41 +196,81 @@ function touchStarted() {
 }
 
 function handle(x, y) {
-  for (let k in buttons) {
-    let b = buttons[k];
-
+  for (let b of buttons) {
     if (
       x > b.x &&
       x < b.x + b.w &&
       y > b.y &&
       y < b.y + b.h
     ) {
-      if (k === "undo") undo();
-      else if (k === "reset") reset();
-      else if (k === "back") screen = "home";
-      else if (b.action) b.action();
+      b.action();
+      return;
     }
   }
 }
 
-// ================= ACTIONS =================
+// ================= CORE =================
+
+function add(name, value) {
+  drinks.push({ name, value });
+  total += value;
+  saveData();
+}
+
+function addBeer(mult) {
+  let base =
+    selection.beer === "PINT" ? 1.6 :
+    selection.beer === "SCHOONER" ? 1.1 :
+    1.4;
+
+  add(selection.beer, base * mult);
+}
 
 function undo() {
   if (drinks.length > 0) {
     let last = drinks.pop();
     total -= last.value;
     total = max(0, total);
-    save();
+    saveData();
   }
 }
 
 function reset() {
   drinks = [];
   total = 0;
-  save();
+  saveData();
 }
 
-function save() {
+function saveData() {
   localStorage.setItem("drinks", JSON.stringify(drinks));
   localStorage.setItem("total", total);
+  localStorage.setItem("lastDecayTime", lastDecayTime);
+}
+
+// ================= SOBER UP =================
+function handleDecay() {
+  let now = millis();
+
+  let hoursPassed = floor((now - lastDecayTime) / 3600000);
+
+  if (hoursPassed > 0) {
+    total -= hoursPassed;
+    total = max(0, total);
+
+    lastDecayTime += hoursPassed * 3600000;
+
+    save();
+    localStorage.setItem("lastDecayTime", lastDecayTime);
+  }
+}
+
+// ================= BOTTOM =================
+
+function drawBottom() {
+  fill(20);
+  rect(0, height - 80, width, 80);
+
+  fill(200);
+  textSize(12);
+  text("A Jack McGreal Project", width / 2, height - 40);
 }
