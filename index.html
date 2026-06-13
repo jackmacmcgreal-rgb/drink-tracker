@@ -17,18 +17,30 @@
   <!-- your app -->
   <script src="sketch.js"></script>
 
-  <style>
-    body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: #0a0a0a;
+<style id="ios_fix_css">
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #0a0a0a;
+  }
 
-  /* THIS is the key fix */
-  touch-action: none;
-}
-    canvas { display: block; }
-  </style>
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+</style>
+  
 </head>
 
 <body>
