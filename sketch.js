@@ -7,7 +7,12 @@ let step = null;
 let selection = {};
 let buttons = [];
 
+let manualHours = 0;
+let manualMode = false;
+
 let lastDecayTime;
+const ALCOHOL_DECAY_RATE_PER_HOUR = 1.2; 
+// tuned for your system scale (matches your drink units ≈ BAC proxy)
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -24,7 +29,11 @@ function setup() {
   drinks = JSON.parse(localStorage.getItem("drinks") || "[]");
   total = Number(localStorage.getItem("total") || 0);
   
-  lastDecayTime = Number(localStorage.getItem("lastDecayTime")) || millis();
+ lastDecayTime = Number(localStorage.getItem("lastDecayTime"));
+
+if (!lastDecayTime || isNaN(lastDecayTime)) {
+  lastDecayTime = millis();
+}
 }
 
 // ================= DRAW =================
@@ -78,6 +87,11 @@ function drawHome() {
     screen = "spirit";
     step = "spirit_type";
   });
+  
+  addBtn("manual", width / 2 - 120, 580, 240, 80, "MANUAL TIME", 40, () => {
+  screen = "manual";
+  manualMode = true;
+});
 }
 
 // ================= FLOW =================
@@ -87,6 +101,7 @@ function drawFlow() {
     screen = "home";
     step = null;
     selection = {};
+
   });
 
   // ================= BEER =================
@@ -164,6 +179,64 @@ function drawFlow() {
     option("LIQUEUR", 220, () => add("SHOT LIQUEUR", 0.5));
     option("LIQUOR", 320, () => add("SHOT LIQUOR", 1));
   }
+  
+  if (screen === "manual") {
+  drawManual();
+}
+}
+
+// =================  MANUAL TIME =================
+
+function drawManual() {
+ 
+  addBtn("back", 10, 130, 80, 40, "Back", 80, () => {
+    screen = "home";
+    manualMode = false;
+  });
+
+  // title
+  fill(255);
+  textSize(22);
+  text("Manual Time Adjustment", width / 2, 200);
+
+  textSize(14);
+  text("Simulate hours passed for alcohol decay", width / 2, 240);
+
+  // minus
+  addBtn("minus", width/2 - 140, 300, 80, 60, "-", 80, () => {
+    manualHours = max(0, manualHours - 1);
+  });
+
+  // display
+  fill(255);
+  textSize(32);
+  text(manualHours + " hrs", width / 2, 330);
+
+  // plus
+  addBtn("plus", width/2 + 60, 300, 80, 60, "+", 80, () => {
+    manualHours += 1;
+  });
+
+  // apply
+  addBtn("apply", width/2 - 120, 420, 240, 70, "APPLY", 40, applyManual);
+}
+
+function applyManual() {
+  if (manualHours <= 0) return;
+
+  let decayRate = 1.2; // same as BAC system
+
+  let reduction = decayRate * manualHours;
+
+  total = max(0, total - reduction);
+
+  lastDecayTime += manualHours * 3600000;
+
+  manualHours = 0;
+
+  saveData();
+  screen = "home";
+  manualMode = false;
 }
 
 // ================= BUTTON =================
@@ -251,17 +324,19 @@ function saveData() {
 function handleDecay() {
   let now = millis();
 
-  let hoursPassed = floor((now - lastDecayTime) / 3600000);
+  let hoursPassed = (now - lastDecayTime) / 3600000;
 
-  if (hoursPassed > 0) {
-    total -= hoursPassed;
-    total = max(0, total);
+  if (hoursPassed <= 0) return;
 
-    lastDecayTime += hoursPassed * 3600000;
+  // Continuous decay (smooth curve over time)
+  let decayAmount = ALCOHOL_DECAY_RATE_PER_HOUR * hoursPassed;
 
-    save();
-    localStorage.setItem("lastDecayTime", lastDecayTime);
-  }
+  total = max(0, total - decayAmount);
+
+  // update timestamp precisely (no stacking error)
+  lastDecayTime = now;
+
+  saveData();
 }
 
 // ================= BOTTOM =================
