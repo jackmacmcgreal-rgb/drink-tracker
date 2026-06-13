@@ -73,22 +73,22 @@ function drawTop() {
 // ================= HOME =================
 
 function drawHome() {
-  addBtn("beer", width / 2 - 120, 220, 240, 80, "BEER", 40, () => {
+  addBtn("beer", width / 2 - 120, 150, 240, 80, "BEER", 40, () => {
     screen = "beer";
     step = "beer_type";
   });
 
-  addBtn("wine", width / 2 - 120, 340, 240, 80, "WINE", 40, () => {
+  addBtn("wine", width / 2 - 120, 250, 240, 80, "WINE", 40, () => {
     screen = "wine";
     step = "wine_type";
   });
 
-  addBtn("spirit", width / 2 - 120, 460, 240, 80, "SPIRIT", 40, () => {
+  addBtn("spirit", width / 2 - 120, 350, 240, 80, "SPIRIT", 40, () => {
     screen = "spirit";
     step = "spirit_type";
   });
   
-  addBtn("manual", width / 2 - 120, 580, 240, 80, "MANUAL TIME", 40, () => {
+  addBtn("manual", width / 2 - 120, 450, 240, 80, "MANUAL TIME", 40, () => {
   screen = "manual";
   manualMode = true;
 });
@@ -107,17 +107,17 @@ function drawFlow() {
   // ================= BEER =================
 
   if (screen === "beer" && step === "beer_type") {
-    option("PINT", 220, () => {
+    option("PINT", 150, () => {
       selection.beer = "PINT";
       step = "beer_strength";
     });
 
-    option("SCHOONER", 320, () => {
+    option("SCHOONER", 250, () => {
       selection.beer = "SCHOONER";
       step = "beer_strength";
     });
 
-    option("BOTTLE", 420, () => {
+    option("BOTTLE", 350, () => {
       selection.beer = "BOTTLE";
       step = "beer_strength";
     });
@@ -132,33 +132,33 @@ function drawFlow() {
   // ================= WINE =================
 
   if (screen === "wine" && step === "wine_type") {
-    option("RED", 220, () => {
+    option("RED", 150, () => {
       selection.wine = "RED";
       step = "wine_size";
     });
 
-    option("WHITE", 320, () => {
+    option("WHITE", 250, () => {
       selection.wine = "WHITE";
       step = "wine_size";
     });
 
-    option("SPARKLING", 420, () => {
+    option("SPARKLING", 350, () => {
       selection.sparkling = "SPARKLING";
       step = "sparkling_size";
     });
   }
 
   if (screen === "wine" && step === "sparkling_size"){
-    option("GLASS", 220, () => add(selection.sparkling,1.5))
-    option("BOTTLE", 320, () => add(selection.sparkling,7.5))
+    option("GLASS", 150, () => add(selection.sparkling,1.5))
+    option("BOTTLE", 250, () => add(selection.sparkling,7.5))
   }
   
   if (screen === "wine" && step === "wine_size") {
     let base = selection.wine === "RED" ? 1.6 : 1.4;
 
-    option("LARGE", 220, () => add(selection.wine, base));
-    option("REGULAR", 320, () => add(selection.wine, 1.0));
-    option("BOTTLE", 420, () =>
+    option("LARGE", 150, () => add(selection.wine, base));
+    option("REGULAR", 250, () => add(selection.wine, 1.0));
+    option("BOTTLE", 350, () =>
       add(selection.wine, selection.wine === "RED" ? 8 : 7.5)
     );
   }
@@ -166,18 +166,18 @@ function drawFlow() {
   // ================= SPIRIT =================
 
   if (screen === "spirit" && step === "spirit_type") {
-    option("MIXER", 220, () => add("MIXER", 0.5));
+    option("MIXER", 150, () => add("MIXER", 0.5));
 
-    option("COCKTAIL", 320, () => add("COCKTAIL", 2));
+    option("COCKTAIL", 250, () => add("COCKTAIL", 2));
 
-    option("SHOT", 420, () => {
+    option("SHOT", 350, () => {
       step = "spirit_shot";
     });
   }
 
   if (screen === "spirit" && step === "spirit_shot") {
-    option("LIQUEUR", 220, () => add("SHOT LIQUEUR", 0.5));
-    option("LIQUOR", 320, () => add("SHOT LIQUOR", 1));
+    option("LIQUEUR", 150, () => add("SHOT LIQUEUR", 0.5));
+    option("LIQUOR", 250, () => add("SHOT LIQUOR", 1));
   }
   
   if (screen === "manual") {
@@ -349,3 +349,5 @@ function drawBottom() {
   textSize(12);
   text("A Jack McGreal Project", width / 2, height - 40);
 }
+
+
