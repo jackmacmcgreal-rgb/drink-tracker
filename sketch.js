@@ -8,6 +8,9 @@ let lastY = 0;
 let contentHeight = 0;
 
 let buttons = {};
+let popAnim = 0;
+
+let todayKey = new Date().toDateString();
 
 let categories = [
   {
@@ -54,12 +57,24 @@ function setup() {
     c.style.touchAction = "none";
   }
 
+  // DAILY RESET SYSTEM
+  let savedDay = localStorage.getItem("day");
+  if (savedDay !== todayKey) {
+    localStorage.setItem("drinks", "[]");
+    localStorage.setItem("total", "0");
+    localStorage.setItem("day", todayKey);
+  }
+
   drinks = JSON.parse(localStorage.getItem("drinks") || "[]");
-  total = parseFloat(localStorage.getItem("total") || "0");
+  total = Number(localStorage.getItem("total") || 0);
+
+  if (isNaN(total)) total = 0;
 }
 
 function draw() {
   background(12);
+
+  popAnim *= 0.9;
 
   drawHeader();
 
@@ -67,7 +82,7 @@ function draw() {
   translate(0, scrollY);
   contentHeight = drawCategories();
   pop();
-
+  
   drawFooter();
 }
 
@@ -84,15 +99,12 @@ function drawHeader() {
   textSize(56);
   text(nf(total, 1, 1), width / 2, 75);
 
-  // buttons
   buttons.undo = { x: 15, y: 40, w: 90, h: 40 };
   buttons.reset = { x: width - 105, y: 40, w: 90, h: 40 };
 
   drawButton(buttons.undo, "Undo", color(80));
-  drawButton(buttons.reset, "Reset", color(200, 60, 60));
+  drawButton(buttons.reset, "RESET", color(220, 60, 60));
 }
-
-// ================= BUTTON DRAW =================
 
 function drawButton(b, label, col) {
   fill(col);
@@ -144,15 +156,12 @@ function drawFooter() {
   fill(20);
   rect(0, height - h, width, h);
 
-  fill(200);
-  textSize(16);
-  text("Tap drinks • Scroll • Track intake", width / 2, height - h + 25);
+  fill(255);
+  textSize(14);
+  text("Tap • Scroll • Swipe items • Reset anytime", width / 2, height - h + 25);
 
   let recent = drinks.slice(-3).reverse();
   let y = height - h + 55;
-
-  fill(255);
-  textSize(14);
 
   for (let d of recent) {
     text(`${d.name} +${d.value}`, width / 2, y);
@@ -190,16 +199,14 @@ function mousePressed() {
   return false;
 }
 
-// ================= TAP LOGIC =================
+// ================= TAP =================
 
 function handleTap(mx, my) {
-  // undo
   if (hit(buttons.undo, mx, my)) {
     undoDrink();
     return;
   }
 
-  // reset
   if (hit(buttons.reset, mx, my)) {
     resetAll();
     return;
@@ -222,13 +229,7 @@ function handleTap(mx, my) {
 }
 
 function hit(b, x, y) {
-  return (
-    b &&
-    x > b.x &&
-    x < b.x + b.w &&
-    y > b.y &&
-    y < b.y + b.h
-  );
+  return b && x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h;
 }
 
 // ================= ACTIONS =================
@@ -237,6 +238,9 @@ function addDrink(name, value) {
   drinks.push({ name, value });
   total += value;
   save();
+  popAnim = 1;
+
+  if (navigator.vibrate) navigator.vibrate(10);
 }
 
 function undoDrink() {
@@ -252,6 +256,8 @@ function resetAll() {
   drinks = [];
   total = 0;
   save();
+
+  if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
 }
 
 function save() {
