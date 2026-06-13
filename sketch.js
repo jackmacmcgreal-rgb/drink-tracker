@@ -1,9 +1,9 @@
+
 let drinks = [];
 let total = 0;
 
 let scrollY = 0;
-let startTouchY = 0;
-let isTouching = false;
+let touchStartY = 0;
 
 let contentHeight = 0;
 
@@ -48,9 +48,12 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(CENTER, CENTER);
 
-  // make canvas mobile-safe
+  // iOS SAFE CANVAS FIX
   let c = document.querySelector("canvas");
-  if (c) c.style.touchAction = "none";
+  if (c) {
+    c.style.position = "fixed";
+    c.style.touchAction = "none";
+  }
 
   drinks = JSON.parse(localStorage.getItem("drinks") || "[]");
   total = parseFloat(localStorage.getItem("total") || "0");
@@ -69,14 +72,14 @@ function draw() {
   drawBottomPanel();
 }
 
-// ================= TOP BAR =================
+// ================= TOP =================
 
 function drawTopBar() {
   fill(20);
   rect(0, 0, width, 100);
 
   fill(255);
-  textSize(32);
+  textSize(30);
   text("Drinks", width / 2, 25);
 
   textSize(50);
@@ -104,7 +107,7 @@ function drawCategories() {
 
   for (let cat of categories) {
     fill(120, 200, 255);
-    textSize(22);
+    textSize(20);
     text(cat.name, width / 2, y);
     y += 30;
 
@@ -151,34 +154,29 @@ function drawBottomPanel() {
   }
 }
 
-// ================= INPUT (FIXED MOBILE) =================
+// ================= INPUT (iPhone SAFE) =================
 
 function touchStarted() {
   if (touches.length > 0) {
-    startTouchY = touches[0].y;
+    touchStartY = touches[0].y;
     handleTap(touches[0].x, touches[0].y);
-    isTouching = true;
   }
   return false;
 }
 
 function touchMoved() {
-  if (!isTouching || touches.length === 0) return false;
+  if (touches.length === 0) return false;
 
   let currentY = touches[0].y;
-  let delta = currentY - startTouchY;
+  let delta = currentY - touchStartY;
 
   scrollY += delta;
 
   let minScroll = min(0, height - contentHeight - 120);
   scrollY = constrain(scrollY, minScroll, 0);
 
-  startTouchY = currentY;
-  return false;
-}
+  touchStartY = currentY;
 
-function touchEnded() {
-  isTouching = false;
   return false;
 }
 
