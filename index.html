@@ -19,12 +19,14 @@
 
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #0a0a0a;
-      touch-action: manipulation;
-    }
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0a0a0a;
+
+  /* THIS is the key fix */
+  touch-action: none;
+}
     canvas { display: block; }
   </style>
 </head>
@@ -32,11 +34,11 @@
 <body>
 
 <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js");
-    });
-  }
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js");
+  });
+}
 </script>
 
 </body>
