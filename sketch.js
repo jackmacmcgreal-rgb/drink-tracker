@@ -135,3 +135,34 @@ function drawBottomPanel() {
     y += 25;
   }
 }
+
+
+function mousePressed() {
+  handleTap(mouseX, mouseY);
+  prevTouchY = mouseY;
+}
+
+function touchStarted() {
+  if (touches.length > 0) {
+    handleTap(touches[0].x, touches[0].y);
+    prevTouchY = touches[0].y;
+  }
+  return false;
+}
+
+function touchMoved() {
+  if (touches.length > 0) {
+    let currentY = touches[0].y;
+    let delta = currentY - prevTouchY;
+
+    if (isFinite(delta)) {
+      scrollY += delta;
+    }
+
+    prevTouchY = currentY;
+
+    let minScroll = min(0, height - contentHeight - 120);
+    scrollY = constrain(scrollY, minScroll, 0);
+  }
+  return false;
+}
