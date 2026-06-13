@@ -6,7 +6,8 @@ let scrollY = 0;
 let lastY = 0;
 
 let contentHeight = 0;
-let deleteBtn;
+
+let buttons = {};
 
 let categories = [
   {
@@ -47,11 +48,10 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(CENTER, CENTER);
 
-  // iOS safety lock
   let c = document.querySelector("canvas");
   if (c) {
-    c.style.touchAction = "none";
     c.style.position = "fixed";
+    c.style.touchAction = "none";
   }
 
   drinks = JSON.parse(localStorage.getItem("drinks") || "[]");
@@ -59,50 +59,54 @@ function setup() {
 }
 
 function draw() {
-  background(10);
+  background(12);
 
-  drawTopBar();
+  drawHeader();
 
   push();
   translate(0, scrollY);
   contentHeight = drawCategories();
   pop();
 
-  drawBottomPanel();
+  drawFooter();
 }
 
-// ================= TOP BAR =================
+// ================= HEADER =================
 
-function drawTopBar() {
+function drawHeader() {
   fill(20);
-  rect(0, 0, width, 100);
+  rect(0, 0, width, 120);
 
   fill(255);
-  textSize(30);
-  text("Drinks", width / 2, 25);
+  textSize(28);
+  text("Drink Tracker", width / 2, 25);
 
-  textSize(50);
-  text(nf(total, 1, 1), width / 2, 70);
+  textSize(56);
+  text(nf(total, 1, 1), width / 2, 75);
 
-  deleteBtn = {
-    x: width - 130,
-    y: 30,
-    w: 120,
-    h: 40
-  };
+  // buttons
+  buttons.undo = { x: 15, y: 40, w: 90, h: 40 };
+  buttons.reset = { x: width - 105, y: 40, w: 90, h: 40 };
 
-  fill(200, 60, 60);
-  rect(deleteBtn.x, deleteBtn.y, deleteBtn.w, deleteBtn.h, 10);
+  drawButton(buttons.undo, "Undo", color(80));
+  drawButton(buttons.reset, "Reset", color(200, 60, 60));
+}
+
+// ================= BUTTON DRAW =================
+
+function drawButton(b, label, col) {
+  fill(col);
+  rect(b.x, b.y, b.w, b.h, 12);
 
   fill(255);
   textSize(14);
-  text("Undo", deleteBtn.x + 60, deleteBtn.y + 20);
+  text(label, b.x + b.w / 2, b.y + b.h / 2);
 }
 
 // ================= LIST =================
 
 function drawCategories() {
-  let y = 120;
+  let y = 140;
 
   for (let cat of categories) {
     fill(120, 200, 255);
@@ -112,15 +116,15 @@ function drawCategories() {
 
     for (let item of cat.items) {
       fill(30);
-      rect(20, y, width - 40, 60, 12);
+      rect(15, y, width - 30, 60, 14);
 
       fill(255);
       textSize(16);
       text(item.name + " (" + item.value + ")", width / 2, y + 30);
 
-      item.x = 20;
+      item.x = 15;
       item.y = y;
-      item.w = width - 40;
+      item.w = width - 30;
       item.h = 60;
 
       y += 70;
@@ -132,28 +136,31 @@ function drawCategories() {
   return y;
 }
 
-// ================= BOTTOM =================
+// ================= FOOTER =================
 
-function drawBottomPanel() {
-  let h = 160;
+function drawFooter() {
+  let h = 120;
 
   fill(20);
   rect(0, height - h, width, h);
 
-  fill(255);
-  textSize(18);
-  text("Recent", width / 2, height - h + 25);
+  fill(200);
+  textSize(16);
+  text("Tap drinks • Scroll • Track intake", width / 2, height - h + 25);
 
   let recent = drinks.slice(-3).reverse();
-  let y = height - h + 60;
+  let y = height - h + 55;
+
+  fill(255);
+  textSize(14);
 
   for (let d of recent) {
-    text(d.name + " +" + d.value, width / 2, y);
-    y += 25;
+    text(`${d.name} +${d.value}`, width / 2, y);
+    y += 20;
   }
 }
 
-// ================= INPUT (IPHONE SAFE SIMPLE VERSION) =================
+// ================= INPUT =================
 
 function touchStarted() {
   if (touches.length > 0) {
@@ -171,11 +178,10 @@ function touchMoved() {
 
   scrollY += delta;
 
-  let minScroll = min(0, height - contentHeight - 120);
+  let minScroll = min(0, height - contentHeight - 140);
   scrollY = constrain(scrollY, minScroll, 0);
 
   lastY = y;
-
   return false;
 }
 
@@ -184,28 +190,30 @@ function mousePressed() {
   return false;
 }
 
-// ================= LOGIC =================
+// ================= TAP LOGIC =================
 
 function handleTap(mx, my) {
-  if (
-    mx > deleteBtn.x &&
-    mx < deleteBtn.x + deleteBtn.w &&
-    my > deleteBtn.y &&
-    my < deleteBtn.y + deleteBtn.h
-  ) {
+  // undo
+  if (hit(buttons.undo, mx, my)) {
     undoDrink();
     return;
   }
 
-  let adjustedY = my - scrollY;
+  // reset
+  if (hit(buttons.reset, mx, my)) {
+    resetAll();
+    return;
+  }
+
+  let y = my - scrollY;
 
   for (let cat of categories) {
     for (let item of cat.items) {
       if (
         mx > item.x &&
         mx < item.x + item.w &&
-        adjustedY > item.y &&
-        adjustedY < item.y + item.h
+        y > item.y &&
+        y < item.y + item.h
       ) {
         addDrink(item.name, item.value);
       }
@@ -213,12 +221,22 @@ function handleTap(mx, my) {
   }
 }
 
+function hit(b, x, y) {
+  return (
+    b &&
+    x > b.x &&
+    x < b.x + b.w &&
+    y > b.y &&
+    y < b.y + b.h
+  );
+}
+
+// ================= ACTIONS =================
+
 function addDrink(name, value) {
   drinks.push({ name, value });
   total += value;
-
-  localStorage.setItem("drinks", JSON.stringify(drinks));
-  localStorage.setItem("total", total);
+  save();
 }
 
 function undoDrink() {
@@ -226,8 +244,17 @@ function undoDrink() {
     let last = drinks.pop();
     total -= last.value;
     total = max(0, total);
-
-    localStorage.setItem("drinks", JSON.stringify(drinks));
-    localStorage.setItem("total", total);
+    save();
   }
+}
+
+function resetAll() {
+  drinks = [];
+  total = 0;
+  save();
+}
+
+function save() {
+  localStorage.setItem("drinks", JSON.stringify(drinks));
+  localStorage.setItem("total", total);
 }
