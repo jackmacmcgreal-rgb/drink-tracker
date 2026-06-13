@@ -2,50 +2,9 @@
 let drinks = [];
 let total = 0;
 
-let scrollY = 0;
-let lastY = 0;
-
-let contentHeight = 0;
+let screen = "home"; // home | beer | wine | spirits
 
 let buttons = {};
-let popAnim = 0;
-
-let todayKey = new Date().toDateString();
-
-let categories = [
-  {
-    name: "Quick Add",
-    items: [
-      { name: "Cocktail", value: 2 },
-      { name: "Liquor Shot", value: 1 },
-      { name: "Liqueur Shot", value: 0.5 },
-      { name: "Mixer", value: 1 }
-    ]
-  },
-  {
-    name: "Beer",
-    items: [
-      { name: "Schooner Full", value: 1.1 },
-      { name: "Schooner Mid", value: 0.8 },
-      { name: "Schooner Light", value: 0.6 },
-      { name: "Pint Full", value: 1.6 },
-      { name: "Pint Mid", value: 1.2 },
-      { name: "Pint Light", value: 0.9 },
-      { name: "Bottle Full", value: 1.4 },
-      { name: "Bottle Mid", value: 1 },
-      { name: "Bottle Light", value: 0.8 }
-    ]
-  },
-  {
-    name: "Wine",
-    items: [
-      { name: "Red 150ml", value: 1.6 },
-      { name: "White 150ml", value: 1.4 },
-      { name: "Champagne 150ml", value: 1.5 },
-      { name: "Bottle Wine", value: 7.5 }
-    ]
-  }
-];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -57,38 +16,28 @@ function setup() {
     c.style.touchAction = "none";
   }
 
-  // DAILY RESET SYSTEM
-  let savedDay = localStorage.getItem("day");
-  if (savedDay !== todayKey) {
-    localStorage.setItem("drinks", "[]");
-    localStorage.setItem("total", "0");
-    localStorage.setItem("day", todayKey);
-  }
-
   drinks = JSON.parse(localStorage.getItem("drinks") || "[]");
   total = Number(localStorage.getItem("total") || 0);
-
-  if (isNaN(total)) total = 0;
 }
+
+// ================= DRAW =================
 
 function draw() {
-  background(12);
+  background(15);
 
-  popAnim *= 0.9;
+  drawTopBar();
 
-  drawHeader();
+  if (screen === "home") drawHome();
+  if (screen === "beer") drawBeer();
+  if (screen === "wine") drawWine();
+  if (screen === "spirits") drawSpirits();
 
-  push();
-  translate(0, scrollY);
-  contentHeight = drawCategories();
-  pop();
-  
-  drawFooter();
+  drawBottomBar();
 }
 
-// ================= HEADER =================
+// ================= TOP BAR (ALWAYS VISIBLE) =================
 
-function drawHeader() {
+function drawTopBar() {
   fill(20);
   rect(0, 0, width, 120);
 
@@ -96,77 +45,134 @@ function drawHeader() {
   textSize(28);
   text("Drink Tracker", width / 2, 25);
 
-  textSize(56);
+  textSize(44);
   text(nf(total, 1, 1), width / 2, 75);
 
-  buttons.undo = { x: 15, y: 40, w: 90, h: 40 };
-  buttons.reset = { x: width - 105, y: 40, w: 90, h: 40 };
+  // NEVER BLOCKED BUTTONS
+  buttons.undo = { x: 10, y: 40, w: 80, h: 40 };
+  buttons.reset = { x: width - 90, y: 40, w: 80, h: 40 };
 
-  drawButton(buttons.undo, "Undo", color(80));
-  drawButton(buttons.reset, "RESET", color(220, 60, 60));
+  drawBtn(buttons.undo, "Undo", color(80));
+  drawBtn(buttons.reset, "Reset", color(200, 60, 60));
 }
 
-function drawButton(b, label, col) {
+function drawBtn(b, label, col) {
   fill(col);
-  rect(b.x, b.y, b.w, b.h, 12);
-
+  rect(b.x, b.y, b.w, b.h, 10);
   fill(255);
-  textSize(14);
+  textSize(12);
   text(label, b.x + b.w / 2, b.y + b.h / 2);
 }
 
-// ================= LIST =================
+// ================= HOME SCREEN =================
 
-function drawCategories() {
-  let y = 140;
-
-  for (let cat of categories) {
-    fill(120, 200, 255);
-    textSize(20);
-    text(cat.name, width / 2, y);
-    y += 30;
-
-    for (let item of cat.items) {
-      fill(30);
-      rect(15, y, width - 30, 60, 14);
-
-      fill(255);
-      textSize(16);
-      text(item.name + " (" + item.value + ")", width / 2, y + 30);
-
-      item.x = 15;
-      item.y = y;
-      item.w = width - 30;
-      item.h = 60;
-
-      y += 70;
-    }
-
-    y += 20;
-  }
-
-  return y;
+function drawHome() {
+  drawNavButton("Beer", width / 2, 220, "beer");
+  drawNavButton("Wine", width / 2, 340, "wine");
+  drawNavButton("Spirits", width / 2, 460, "spirits");
 }
 
-// ================= FOOTER =================
+function drawNavButton(label, x, y, target) {
+  fill(40);
+  rect(x - 120, y - 40, 240, 80, 16);
 
-function drawFooter() {
-  let h = 120;
+  fill(255);
+  textSize(22);
+  text(label, x, y);
+
+  buttons[label] = { x: x - 120, y: y - 40, w: 240, h: 80, target };
+}
+
+// ================= BEER =================
+
+function drawBeer() {
+  drawBack();
+
+  let items = [
+    ["Pint", 1.6],
+    ["Schooner", 1.1],
+    ["Bottle", 1.4]
+  ];
+
+  drawItems(items);
+}
+
+// ================= WINE =================
+
+function drawWine() {
+  drawBack();
+
+  let items = [
+    ["Red 150ml", 1.6],
+    ["White 150ml", 1.4],
+    ["Champagne", 1.5]
+  ];
+
+  drawItems(items);
+}
+
+// ================= SPIRITS =================
+
+function drawSpirits() {
+  drawBack();
+
+  let items = [
+    ["Shot", 1],
+    ["Double Shot", 2],
+    ["Liqueur", 0.5]
+  ];
+
+  drawItems(items);
+}
+
+// ================= ITEMS =================
+
+function drawItems(items) {
+  let y = 180;
+
+  for (let i of items) {
+    let b = { x: 20, y: y, w: width - 40, h: 70 };
+
+    fill(30);
+    rect(b.x, b.y, b.w, b.h, 14);
+
+    fill(255);
+    textSize(18);
+    text(`${i[0]} (${i[1]})`, width / 2, y + 35);
+
+    b.label = i[0];
+    b.value = i[1];
+
+    buttons[i[0]] = b;
+
+    y += 90;
+  }
+}
+
+// ================= BACK BUTTON =================
+
+function drawBack() {
+  fill(80);
+  rect(10, 130, 90, 40, 10);
+
+  fill(255);
+  textSize(14);
+  text("Back", 55, 150);
+
+  buttons.back = { x: 10, y: 130, w: 90, h: 40 };
+}
+
+// ================= BOTTOM BAR (SAFE AREA) =================
+
+function drawBottomBar() {
+  let h = 80;
 
   fill(20);
   rect(0, height - h, width, h);
 
-  fill(255);
-  textSize(14);
-  text("Tap • Scroll • Swipe items • Reset anytime", width / 2, height - h + 25);
-
-  let recent = drinks.slice(-3).reverse();
-  let y = height - h + 55;
-
-  for (let d of recent) {
-    text(`${d.name} +${d.value}`, width / 2, y);
-    y += 20;
-  }
+  fill(200);
+  textSize(12);
+  text("Tap items • Use Undo / Reset", width / 2, height - 45);
 }
 
 // ================= INPUT =================
@@ -174,23 +180,7 @@ function drawFooter() {
 function touchStarted() {
   if (touches.length > 0) {
     handleTap(touches[0].x, touches[0].y);
-    lastY = touches[0].y;
   }
-  return false;
-}
-
-function touchMoved() {
-  if (touches.length === 0) return false;
-
-  let y = touches[0].y;
-  let delta = y - lastY;
-
-  scrollY += delta;
-
-  let minScroll = min(0, height - contentHeight - 140);
-  scrollY = constrain(scrollY, minScroll, 0);
-
-  lastY = y;
   return false;
 }
 
@@ -199,31 +189,36 @@ function mousePressed() {
   return false;
 }
 
-// ================= TAP =================
+// ================= TAP SYSTEM =================
 
-function handleTap(mx, my) {
-  if (hit(buttons.undo, mx, my)) {
-    undoDrink();
+function handleTap(x, y) {
+  // undo
+  if (hit(buttons.undo, x, y)) return undo();
+
+  // reset
+  if (hit(buttons.reset, x, y)) return reset();
+
+  // back
+  if (hit(buttons.back, x, y)) {
+    screen = "home";
     return;
   }
 
-  if (hit(buttons.reset, mx, my)) {
-    resetAll();
-    return;
+  // nav
+  for (let k in buttons) {
+    let b = buttons[k];
+    if (b.target && hit(b, x, y)) {
+      screen = b.target;
+      return;
+    }
   }
 
-  let y = my - scrollY;
-
-  for (let cat of categories) {
-    for (let item of cat.items) {
-      if (
-        mx > item.x &&
-        mx < item.x + item.w &&
-        y > item.y &&
-        y < item.y + item.h
-      ) {
-        addDrink(item.name, item.value);
-      }
+  // add drinks
+  for (let k in buttons) {
+    let b = buttons[k];
+    if (b.value && hit(b, x, y)) {
+      addDrink(b.label, b.value);
+      return;
     }
   }
 }
@@ -238,12 +233,9 @@ function addDrink(name, value) {
   drinks.push({ name, value });
   total += value;
   save();
-  popAnim = 1;
-
-  if (navigator.vibrate) navigator.vibrate(10);
 }
 
-function undoDrink() {
+function undo() {
   if (drinks.length > 0) {
     let last = drinks.pop();
     total -= last.value;
@@ -252,12 +244,10 @@ function undoDrink() {
   }
 }
 
-function resetAll() {
+function reset() {
   drinks = [];
   total = 0;
   save();
-
-  if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
 }
 
 function save() {
