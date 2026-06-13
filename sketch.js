@@ -124,9 +124,9 @@ function drawFlow() {
   }
 
   if (screen === "beer" && step === "beer_strength") {
-    option("FULL STRENGTH", 220, () => addBeer(1));
-    option("MID STRENGTH", 320, () => addBeer(0.8));
-    option("LOW STRENGTH", 420, () => addBeer(0.6));
+    option("FULL STRENGTH", 150, () => addBeer(1));
+    option("MID STRENGTH", 250, () => addBeer(0.8));
+    option("LOW STRENGTH", 350, () => addBeer(0.6));
   }
 
   // ================= WINE =================
