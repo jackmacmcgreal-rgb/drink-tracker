@@ -107,58 +107,58 @@ function drawFlow() {
   // ================= BEER =================
 
   if (screen === "beer" && step === "beer_type") {
-    option("PINT", 150, () => {
-      selection.beer = "PINT";
+    option("PINT (425ml)", 150, () => {
+      selection.beer = "PINT (425ml)";
       step = "beer_strength";
     });
 
-    option("SCHOONER", 250, () => {
-      selection.beer = "SCHOONER";
+    option("SCHOONER (285ml)", 250, () => {
+      selection.beer = "SCHOONER (285ml)";
       step = "beer_strength";
     });
 
     option("BOTTLE", 350, () => {
-      selection.beer = "BOTTLE";
+      selection.beer = "BOTTLE (375ml)";
       step = "beer_strength";
     });
   }
 
   if (screen === "beer" && step === "beer_strength") {
-    option("FULL STRENGTH", 150, () => addBeer(1));
-    option("MID STRENGTH", 250, () => addBeer(0.8));
-    option("LOW STRENGTH", 350, () => addBeer(0.6));
+    option("FULL STRENGTH (4.8%)", 150, () => addBeer(1));
+    option("MID STRENGTH (3.5%)", 250, () => addBeer(0.8));
+    option("LOW STRENGTH (2.7%)", 350, () => addBeer(0.6));
   }
 
   // ================= WINE =================
 
   if (screen === "wine" && step === "wine_type") {
-    option("RED", 150, () => {
-      selection.wine = "RED";
+    option("RED (13.5%)", 150, () => {
+      selection.wine = "RED (13.5%)";
       step = "wine_size";
     });
 
-    option("WHITE", 250, () => {
-      selection.wine = "WHITE";
+    option("WHITE (11.5%)", 250, () => {
+      selection.wine = "WHITE (11.5%)";
       step = "wine_size";
     });
 
-    option("SPARKLING", 350, () => {
-      selection.sparkling = "SPARKLING";
+    option("SPARKLING (12%)", 350, () => {
+      selection.sparkling = "SPARKLING (12%)";
       step = "sparkling_size";
     });
   }
 
   if (screen === "wine" && step === "sparkling_size"){
-    option("GLASS", 150, () => add(selection.sparkling,1.5))
-    option("BOTTLE", 250, () => add(selection.sparkling,7.5))
+    option("GLASS (150ml)", 150, () => add(selection.sparkling,1.5))
+    option("BOTTLE (750ml)", 250, () => add(selection.sparkling,7.5))
   }
   
   if (screen === "wine" && step === "wine_size") {
-    let base = selection.wine === "RED" ? 1.6 : 1.4;
+    let base = selection.wine === "RED (13.5%)" ? 1.6 : 1.4;
 
-    option("LARGE", 150, () => add(selection.wine, base));
-    option("REGULAR", 250, () => add(selection.wine, 1.0));
-    option("BOTTLE", 350, () =>
+    option("RESTAURANT (150ml)", 150, () => add(selection.wine, base));
+    option("BAR (100ml)", 250, () => add(selection.wine, 1.0));
+    option("BOTTLE (750ml)", 350, () =>
       add(selection.wine, selection.wine === "RED" ? 8 : 7.5)
     );
   }
@@ -292,8 +292,8 @@ function add(name, value) {
 
 function addBeer(mult) {
   let base =
-    selection.beer === "PINT" ? 1.6 :
-    selection.beer === "SCHOONER" ? 1.1 :
+    selection.beer === "PINT (425ml)" ? 1.6 :
+    selection.beer === "SCHOONER (285ml)" ? 1.1 :
     1.4;
 
   add(selection.beer, base * mult);
