@@ -117,7 +117,7 @@ function drawFlow() {
       step = "beer_strength";
     });
 
-    option("BOTTLE", 350, () => {
+    option("BOTTLE (375ml)", 350, () => {
       selection.beer = "BOTTLE (375ml)";
       step = "beer_strength";
     });
