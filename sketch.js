@@ -166,7 +166,9 @@ function drawFlow() {
   // ================= SPIRIT =================
 
   if (screen === "spirit" && step === "spirit_type") {
-    option("MIXER", 150, () => add("MIXER", 0.5));
+    option("MIXER", 150, () => {
+      step = "spirit_shot";
+    });
 
     option("COCKTAIL", 250, () => add("COCKTAIL", 2));
 
